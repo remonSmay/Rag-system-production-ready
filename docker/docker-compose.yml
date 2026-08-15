@@ -1,38 +1,32 @@
 services:
   mongodb:
     image: mongo:7-jammy
-    
-    container_name: mongodb
-    
+    container_name: mini-rag-mongodb
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
     ports:
-      - 27017:27017
-
-    
+      - "27017:27017"
     volumes:
       - mongo_data:/data/db
-    
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
-    
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mongosh --quiet --eval 'db.adminCommand({ ping: 1 }).ok' mongodb://$${MONGO_INITDB_ROOT_USERNAME}:$${MONGO_INITDB_ROOT_PASSWORD}@localhost:27017/admin | grep 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - backend
-    
-    restart: always
-  
+
 networks:
   backend:
+    driver: bridge
+
 volumes:
   mongo_data:
-# sudo docker compose -f docker/docker-compose.yml up -d mongodb 
-# for starting the mongodb container in detached mode
-
-# sudo docker stop $(sudo docker ps -aq)
-# sudo docker rm $(sudo docker ps -aq)
-# sudo docker rmi $(sudo docker image -q)
-# sudo docker volume rm $(sudo docker volume ls -q)
-# sudo docker system prune --all
-# sudo docker stop mongodb
-# sudo docker rm mongodb
-# sudo docker rmi mongo:7-jammy
-# sudo docker volume rm project-mini-rag_mongo_data
